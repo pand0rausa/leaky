@@ -1,0 +1,207 @@
+<html>
+
+<head>
+  <!-- Load jQuery -->
+  <script
+    src="https://code.jquery.com/jquery-3.1.1.min.js"
+    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+    crossorigin="anonymous"></script>
+
+
+  <script>
+    $(document).ready(function() {
+
+      runTest = function runTest() {
+
+        // Hide the sections
+        $('.hidable').addClass('hide');
+
+        // Show the first step
+        $('#s1').removeClass('hide');
+
+        // Get the blocked page
+        $.get('http://exfil.egc.io', function() {
+
+        }).always(function(content, status, xhr) {
+          if (status === 'error') {
+            $('#sc1').html('Blocked');
+            $('#sc1').addClass('warning');
+
+            var rando = 'failcoat exfiltrated data: ' + Math.random().toString(36).substr(3);
+            var d = Date.now();
+
+            $('#s2').removeClass('hide');
+
+            $.get('http://exfil.egc.io/name.php?name=' + d + '&y=' + rando, function() {
+              // Success!
+            }).always(function(content, status, xhr) {
+              if (status === 'error') {
+                $('#sc2').html('Got Blocked');
+                $('#sc2').addClass('success');
+
+                $('#s3').removeClass('hide');
+                var exfil_url = 'http://exfil.netbird.org/uploads/' + d;
+                $.get(exfil_url, function() {
+                  // Success!
+                }).always(function(content, status, xhr) {
+                  if (status === 'success' && xhr.status === 200) {
+                    $('#sc3').html('Vulnerable');
+                    $('#sc3').addClass('fail');
+                    $('#vulnerable').removeClass('hide');
+                    $('#exfil').html(rando);
+                    $('#exfil_url').attr('href', exfil_url);
+                    $.get('http://exfil.netbird.org/log?status=vulnerable');
+                  }
+                  else {
+                    $('#sc3').html('Not Vulnerable');
+                    $('#sc3').addClass('success');
+                    $('#notvulnerable').removeClass('hide');
+                    $.get('http://exfil.netbird.org/log?status=notvulnerable');
+                  }
+                });
+              }
+              else {
+                $('#sc2').html('Not Blocked');
+                $('#sc2').addClass('fail');
+                $.get('http://failcoat.com/log?status=undetermined');
+              }
+            });
+
+          }
+          else {
+            $('#sc1').html('Not blocked');
+            $('#undetermined').removeClass('hide');
+          }
+        });
+      }
+    });
+  </script>
+
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+    }
+    td, th {
+      border: 1px solid #eee;
+      padding: 1em;
+    }
+    .warning {
+      padding: 1em;
+      background-color: gold;
+    }
+    .success {
+      padding: 1em;
+      background-color: green;
+      color: white;
+    }
+    .fail {
+      padding: 1em;
+      background-color: red;
+      color: white;
+    }
+    .hide {
+      display: none;
+      visibility: hidden;
+    }
+    .explanation {
+      margin-top: 3em;
+      padding: 2em;
+      border: 1px solid #333;
+      background-color: #e0e0e0;
+    }
+  </style>
+
+  <title>failcoat</title>
+
+</head>
+
+<body>
+
+
+  <h1>failcoat</h1>
+
+  <button id="button" onClick="runTest();">Run Test</button>
+
+  <table>
+    <tr id="s1" class="hide hidable">
+      <th>Step 1</th>
+      <td>Testing Block</td>
+      <td id="sc1">Testing</td>
+    </tr>
+    <tr id="s2" class="hide hidable">
+      <th>Step 2</th>
+      <td>Exfiltrating Data</td>
+      <td id="sc2">Testing</td>
+    </tr>
+    <tr id="s3" class="hide hidable">
+      <th>Step 3</th>
+      <td>Verify Vulnerability</td>
+      <td id="sc3">Testing</td>
+    </tr>
+  </table>
+
+
+  <div id="vulnerable" class="hide hidable explanation">
+    Unfortunately, it appears that you are vulnerable to the Failcoat bug.
+    We sent the following data out:
+      <pre id="exfil"></pre>
+
+    which you can see <a target="_new" id="exfil_url">here</a>.
+  </div>
+
+  </div>
+  <div id="notvulnerable" class="hide hidable explanation">
+    Congratulations, you're not vulnerable to the Failcoat bug!
+  </div>
+  <div id="undetermined" class="hide hidable explanation">
+    Initial site is not blocked, can't continue the test.
+  </div>
+
+  <p>First of all, this site is NOT associated with Blue Coat, or Symantec. We're just trying to help people check for potential problems, and then fix them. (A link to an official page is down below.)</p>
+
+<h3>The Problem:</h3> 
+
+<p>ProxySG policy can grow to become quite complex. Unfortunately, sometimes code in one layer can affect code in earlier layers in adverse or undesirable ways. The impact of these cases can be minor or major.
+
+One such case, of the Major Impact variety, can allow the Proxy to actually pass on a GET or POST call to a destination that's rated as Malware (or any other blocking category).
+
+Worse, this happens even though the client machine sees a normal block page, leading you to think that all of the traffic was blocked to the malicious site.
+
+While not an actual vulnerability in the Proxy, it is certainly an undesirable side effect of incorrect policy. And that's tricky to test for...</p>
+
+
+<h3>The Test:</h3>
+
+<p>This site was built to provide a quick and easy way to test your Proxy, to see if it contains policy rules that allow this situation to occur.</p>
+
+<p>To test, simply click the "Run Test" button. The test consists of three steps:</p>
+
+<p>Step 1 - A simple request is sent to a site that is rated as Malware. (Note: it's not actively malicious, but it needs this category rating for the test.) Assuming you are running this test behind a ProxySG, you should see a "Blocked" result. (If your Proxy is not blocking any access to Malware sites, you have a much larger configuration problem!)</p>
+
+<p>Step 2 - A second request is sent to the same domain, but this time it is a POST with a block of random data, simulating an exfiltration attempt by a malicious actor.</p>
+
+<p>You're hoping to see a "Got Blocked" result. But wait, this is just from the client computer's perspective. How does it know if the request was completely blocked, or only "mostly blocked" (to steal a meme from Princess Bride). To find out, we have to do the Step 3 check.</p>
+
+<p>Step 3 - In this step, we send a request to a different domain (one that is not rated as malicious), and ask the "normal" domain if the "malware" domain happened to get that POST data we just tried to send. (The domains are on the same server, to make this check easy.)</p>
+
+<p>You're hoping to see a "Not Vulnerable" result in Step 3 -- meaning your policy (A) correctly blocked the client's request, and (B) that the Proxy did not accidentally send the request on to the malware site as a result of some other policy rule it was trying to follow.</p>
+
+<p>If instead you get a "Vulnerable" result, you need to fix your policy. Blue Coat has created a page to explain how such contradictory policy can arise, and how to go about fixing it:</p>
+
+<a href="http://bluecoat.force.com/knowledgebase/articles/Solution/000032877">http://bluecoat.force.com/knowledgebase/articles/Solution/000032877</a>
+
+<p>Once you think you've fixed your policy, feel free to come back and re-test.</p>
+
+
+<p>Finally, if re-testing still shows that you're failing, and you're not sure why, so you need to open a support ticket, please mention "failcoat" when you do...</p>
+
+<p>This may help get prioritized service (or not, but it's worth a try), as a Blue Coat representative has indicated that they are very interested in seeing cases where our test shows a policy failure, but it is NOT fixable by the KB article's proposed remediation.</p>
+
+</body>
+
+</html>
+
+
